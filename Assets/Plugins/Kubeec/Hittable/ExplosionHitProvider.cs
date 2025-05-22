@@ -6,6 +6,7 @@ using UnityEngine;
 namespace Kubeec.Hittable {
     public class ExplosionHitProvider : HitProvider {
 
+        [SerializeField] EffectBase effectBase;
         [SerializeField] Vector3 offsetPosition;
         [SerializeField] float radius;
         [SerializeField] LayerMask layerMask;
@@ -47,7 +48,6 @@ namespace Kubeec.Hittable {
             if (!IsInitialized()) {
                 return;
             }
-            playEffect = false;
             Vector3 center = transform.TransformPoint(offsetPosition);
             effectBase?.CreateAndPlay(center, transform.rotation);
             Collider[] hits = Physics.OverlapSphere(center, radius, layerMask);
@@ -61,11 +61,13 @@ namespace Kubeec.Hittable {
 
         void HandleCollider(Collider collider, Vector3 center) {
             if (collider.TryGetComponent(out HitReceiver hitReceiver) && !ignoredReceivers.Contains(hitReceiver)) {
-                float distance = Vector3.Distance(center, hitReceiver.transform.position);
+                Vector3 dir = center - hitReceiver.transform.position;
+                float distance = dir.magnitude;
                 float tDistance = distance / radius;
                 float damage = baseDamage * distanceDamageCurve.Evaluate(tDistance);
                 float delay = baseDelay * distanceDelayCurve.Evaluate(tDistance);
-                damage = TakeHit(hitReceiver, hitType, damage, center, null, delay);
+                HitInfo hitInfo = CreateHit(hitReceiver, hitType, damage, collider.ClosestPoint(center), dir, delay);
+                damage = SendHit(hitInfo);
                 if (useForceToRigibody && collider.attachedRigidbody != null && !collider.attachedRigidbody.isKinematic) {
                     Rigidbody rb = collider.attachedRigidbody;
                     hitReceiver.InvokeDelay(() => {

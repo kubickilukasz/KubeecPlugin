@@ -5,10 +5,42 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System;
+using Kubeec.General;
 
 public static class Extensions {
 
     public const string pathToResourcesData = "Data";
+
+    static CustomPool<EmptyBehaviour> _genericPool = null;
+    public static CustomPool<EmptyBehaviour> genericPool {
+        get {
+            if (_genericPool == null) {
+                _genericPool = new CustomPool<EmptyBehaviour>();
+            }
+            return _genericPool;
+        }
+    }
+
+    public class EmptyBehaviour : MonoBehaviour {
+
+        public bool isQuitting { private set; get; } = false;   
+
+        void OnApplicationQuit() {
+            isQuitting = true;
+        }
+    }
+
+    public static T GetOrAdd<T>(this MonoBehaviour behaviour) where T : Component {
+        return behaviour.gameObject.GetOrAdd<T>();
+    }
+
+    public static T GetOrAdd<T>(this GameObject gameObject) where T : Component {
+        if (gameObject.TryGetComponent(out T component)) {
+            return component;
+        } else {
+            return gameObject.AddComponent<T>();
+        }
+    }
 
     public static Vector3 GetRandomPosition(this Bounds bounds, Vector3? position = null) {
         Vector3 center = (position ?? Vector3.zero) + bounds.center;
@@ -32,30 +64,33 @@ public static class Extensions {
         return (-(Mathf.Cos(Mathf.PI * t) - 1) / 2);
     }
 
-    public static T GetOrAddComponent<T>(this MonoBehaviour behaviour) where T : Component {
-        return GetOrAddComponent<T>(behaviour.gameObject);
+    public static void TryMoveTo(this Rigidbody rigidbody, Vector3 position, Quaternion rotation) {
+        rigidbody.TryMoveTo(position, rotation, Time.fixedDeltaTime);
     }
 
-    public static T GetOrAddComponent<T>(this GameObject gameObject) where T : Component{
-        if (gameObject.TryGetComponent(out T component)) {
-            return component;
-        }
-        return gameObject.AddComponent<T>();
+    public static void TryMoveTo(this Rigidbody rigidbody, Vector3 position, Quaternion rotation, float deltaTime) {
+        deltaTime = (1 / deltaTime);
+        rigidbody.AddForce((((position - rigidbody.position) * deltaTime) - rigidbody.linearVelocity), ForceMode.VelocityChange);
+        rigidbody.TryRotateTo(rotation, deltaTime);
     }
 
-    public static void TryMoveTo(this Rigidbody rigidbody, Vector3 position, Quaternion rotation, float weight = 0f) {
-        rigidbody.TryMoveTo(position, rotation, Time.fixedDeltaTime, weight);
+    public static void TryMoveToSmooth(this Rigidbody rigidbody, Vector3 position, Quaternion rotation, Vector3 center, float smooth) {
+        rigidbody.TryMoveToSmooth(position, rotation, Time.fixedDeltaTime, center, smooth);
     }
 
-    public static void TryMoveTo(this Rigidbody rigidbody, Vector3 position, Quaternion rotation, float deltaTime, float weight = 0f) {
-        float mass = rigidbody.mass * (1 - weight);
-        rigidbody.AddForce((((position - rigidbody.position) * (1 / deltaTime)) - rigidbody.linearVelocity) * mass, ForceMode.Impulse);
+    public static void TryMoveToSmooth(this Rigidbody rigidbody, Vector3 position, Quaternion rotation, float deltaTime, Vector3 center, float smooth) {
+        deltaTime = Mathf.Lerp(1f / Time.fixedDeltaTime, Time.fixedDeltaTime, smooth);
+        Vector3 force = ((position - rigidbody.position) * deltaTime) - rigidbody.linearVelocity;
+        rigidbody.AddForceAtPosition(force, center, ForceMode.Impulse);
+        rigidbody.TryRotateTo(rotation, deltaTime);
+    }
+
+    public static void TryRotateTo(this Rigidbody rigidbody,Quaternion rotation, float deltaTime) {
         rotation = ShortestRotation(rotation, rigidbody.rotation);
         rotation.ToAngleAxis(out float angleInDegrees, out Vector3 rotationAxis);
         rotationAxis *= angleInDegrees;
-        rotationAxis = (rotationAxis * Mathf.Deg2Rad) * (1 / deltaTime);
+        rotationAxis = (rotationAxis * Mathf.Deg2Rad) * deltaTime;
         rigidbody.inertiaTensorRotation = Quaternion.identity;
-        //rigidbody.AddTorque(rotationAxis * rigidbody.mass, ForceMode.Impulse); //Wiggle wiggle wiggle
         rigidbody.angularVelocity = rotationAxis;
         rigidbody.maxAngularVelocity = 14;
     }
@@ -70,26 +105,41 @@ public static class Extensions {
         return new Quaternion(input.x * scalar, input.y * scalar, input.z * scalar, input.w * scalar);
     }
 
-    public static void InvokeOnEndOfFrame(this MonoBehaviour monoBehaviour, Action invokedCall) {
-        if (monoBehaviour == null || !monoBehaviour.isActiveAndEnabled || invokedCall == null) {
-            return;
-        }
-        monoBehaviour.StartCoroutine(WaitForInvoke(invokedCall));
+    public static Coroutine InvokeOnEndOfFrame(this MonoBehaviour monoBehaviour, Action invokedCall) {
+        return monoBehaviour.StartCoroutine(WaitForInvoke(invokedCall));
         IEnumerator WaitForInvoke(Action invokedCall) {
             yield return new WaitForEndOfFrame();
             invokedCall.Invoke();
         }
     }
 
-    public static void InvokeDelay(this MonoBehaviour monoBehaviour, Action invokedCall, float delay) {
-        if (monoBehaviour == null || !monoBehaviour.isActiveAndEnabled || invokedCall == null) {
-            return;
-        }
-        monoBehaviour.StartCoroutine(WaitForInvoke(invokedCall, delay));
+    public static Coroutine InvokeDelay(this MonoBehaviour monoBehaviour, Action invokedCall, float delay) {
+        return monoBehaviour.StartCoroutine(WaitForInvoke(invokedCall, delay));
         IEnumerator WaitForInvoke(Action invokedCall, float delay) {
             yield return new WaitForSeconds(delay);
             invokedCall.Invoke();
         }
+    }
+
+    public static Coroutine InvokeNextFrame(this MonoBehaviour monoBehaviour, Action invokedCall) {
+        return monoBehaviour.StartCoroutine(WaitForInvoke(invokedCall));
+        IEnumerator WaitForInvoke(Action invokedCall) {
+            yield return null;
+            invokedCall.Invoke();
+        }
+    }
+
+    static EmptyBehaviour emptyBehaviour;
+    public static void SafeInvokeNextFrame(this MonoBehaviour monoBehaviour, Action invokedCall) {
+        emptyBehaviour ??= genericPool.Get();
+        if (emptyBehaviour.isQuitting || invokedCall == null) {
+            return;
+        }
+        EmptyBehaviour eb = genericPool.Get();
+        eb.InvokeNextFrame(() => {
+            invokedCall.Invoke();
+            genericPool.Release(eb);
+        });
     }
 
     public static bool CheckHashedPassword(this string hashedPassword, string password) {

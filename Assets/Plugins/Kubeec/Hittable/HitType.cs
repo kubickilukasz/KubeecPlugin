@@ -6,6 +6,7 @@ namespace Kubeec.Hittable {
         Default,
         Explosive,
         Radiant,
-        Blunt
+        Blunt,
+        Heal
     }
 }

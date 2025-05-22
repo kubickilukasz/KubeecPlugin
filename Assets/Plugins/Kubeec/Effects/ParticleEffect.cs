@@ -16,6 +16,8 @@ public class ParticleEffect : EffectBase {
         }
     }
 
+    public override bool IsPlaying() => base.IsPlaying() && particleSystem.isPlaying;
+
     protected override void OnStart() {
         particleSystem.Stop();
     }
@@ -24,5 +26,9 @@ public class ParticleEffect : EffectBase {
         particleSystem.Play();
     }
 
-    
+    protected override void OnStop() {
+        particleSystem.Stop();
+    }
+
+
 }

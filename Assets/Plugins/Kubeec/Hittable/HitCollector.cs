@@ -15,10 +15,10 @@ namespace Kubeec.Hittable {
         public event Action<float, HitReceiver, HitProvider> onHit;
         public event Action<float, HitReceiver, HitProvider> onDeath;
 
-        [SerializeField] float maxHealth = 100f;
-        [SerializeField] List<HitDefinition> hitDefinition = new List<HitDefinition>();
+        [SerializeField] protected float maxHealth = 100f;
+        [SerializeField] protected List<HitDefinition> hitDefinition = new List<HitDefinition>();
 
-        float currentHealth;
+        protected float currentHealth;
 
 #if UNITY_EDITOR
         void OnDrawGizmos() {
@@ -28,19 +28,20 @@ namespace Kubeec.Hittable {
         }
 #endif
 
-        public bool CollectDamage(HitReceiver hitReceiver, HitProvider hitProvider, HitType hitType, float damage) {
+        public bool CollectDamage(HitInfo hitInfo) {
             if (!IsInitialized()) {
                 return false;
             }
-            HitDefinition definition = hitDefinition.FirstOrDefault(x => x.hitType.Equals(hitType));
+            HitDefinition definition = hitDefinition.FirstOrDefault(x => x.hitType.Equals(hitInfo.type));
             if (definition != null) {
-                damage *= definition.multiplier;
+                hitInfo.damage *= definition.multiplier;
             }
-            MyDebug.Log(MyDebug.TypeLog.Hit, hitReceiver, hitProvider, hitType, damage);
-            currentHealth -= damage;
-            onHit?.Invoke(damage, hitReceiver, hitProvider);
+            MyDebug.Log(MyDebug.TypeLog.Hit, hitInfo.hitReceiver, hitInfo.hitProvider, hitInfo.type, hitInfo.damage);
+            currentHealth -= hitInfo.damage;
+            OnHit(hitInfo);
+            onHit?.Invoke(hitInfo.damage, hitInfo.hitReceiver, hitInfo.hitProvider);
             onHitEvent?.Invoke();
-            HandleCurrentHealth(damage, hitReceiver, hitProvider);
+            HandleCurrentHealth(hitInfo.damage, hitInfo.hitReceiver, hitInfo.hitProvider);
             return true;
         }
 
@@ -49,6 +50,9 @@ namespace Kubeec.Hittable {
         }
 
         protected override void OnDispose() {
+        }
+
+        protected virtual void OnHit(HitInfo hitInfo) {
         }
 
         void HandleCurrentHealth(float? damage = 0, HitReceiver hitReceiver = null, HitProvider hitProvider = null) {

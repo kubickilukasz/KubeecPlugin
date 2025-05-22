@@ -10,6 +10,7 @@ public class Timer : MonoBehaviour{
     float time;
     Action onComplete;
     Action<float> onUpdate;
+    bool isGoing = false;
 
     static CustomPool<Timer> customPool = new CustomPool<Timer>(); 
 
@@ -17,6 +18,7 @@ public class Timer : MonoBehaviour{
         currentTimer += Time.deltaTime;
         onUpdate?.Invoke(currentTimer);
         if (currentTimer >= time) {
+            isGoing = false;
             onComplete?.Invoke();
             customPool.Release(this);
         }
@@ -30,6 +32,7 @@ public class Timer : MonoBehaviour{
         Timer timer = customPool.Get();
         timer.Set(time, onComplete);
         timer.onUpdate = onUpdate;
+        timer.isGoing = true;
         return timer;
     }
 
@@ -40,10 +43,13 @@ public class Timer : MonoBehaviour{
     }
 
     public void Stop(bool invokeOnComplete = false) {
-        if (invokeOnComplete) {
-            onComplete?.Invoke();
+        if (isGoing) {
+            isGoing = false;
+            if (invokeOnComplete) {
+                onComplete?.Invoke();
+            }
+            customPool.Release(this);
         }
-        Destroy(gameObject);
     }
 
 }

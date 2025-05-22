@@ -1,14 +1,15 @@
-﻿using NUnit.Framework;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Kubeec.Hittable {
 
     [RequireComponent(typeof(Rigidbody))]
     public class PhysicsHitProvider : HitProvider {
 
-        [Space]
+        public UnityEvent onCollisionEnter;
+
         [SerializeField] List<ColliderHitDefinition> collidersHitDefinition = new();
 
         void OnCollisionEnter(Collision collision) {
@@ -16,19 +17,16 @@ namespace Kubeec.Hittable {
                 float force = (collision.impulse / Time.fixedDeltaTime).magnitude;
                 ContactPoint contact = collision.GetContact(0);
                 foreach (ColliderHitDefinition colliderHit in collidersHitDefinition) {
-                    if (colliderHit.collider.Equals(contact.thisCollider) && colliderHit.minForce <= force) {
-                        TakeHit(hitReceiver, colliderHit.hitType, force * colliderHit.damagePerForce, contact.point, contact.normal);
+                    if (colliderHit.collider.Equals(contact.thisCollider)) {
+                        if (colliderHit.minForce <= force) {
+                            colliderHit.effectBaseReachMinForce?.CreateAndPlay(contact.point, contact.normal);
+                            HitInfo hitInfo = CreateHit(hitReceiver, colliderHit.hitType, force * colliderHit.damagePerForce, contact.point, contact.normal);
+                            SendHit(hitInfo);
+                        }
                     }
                 }
             }
-        }
-
-        [System.Serializable]
-        public class ColliderHitDefinition {
-            public Collider collider;
-            public HitType hitType;
-            public float minForce = 1f;
-            public float damagePerForce = 1f;
+            onCollisionEnter?.Invoke();
         }
 
     }

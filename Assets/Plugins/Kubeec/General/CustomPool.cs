@@ -4,7 +4,7 @@ using UnityEngine.Pool;
 
 namespace Kubeec.General {
 
-    public class CustomPool<T> : ObjectPool<T> where T : Component {
+    public class CustomPool<T> : IObjectPool<T> where T : Component {
 
         const string nameDynamicHandler = "[Generated] {0}";
         const string nameReleasedObjects = "[Generated Pool] {0}";
@@ -19,19 +19,33 @@ namespace Kubeec.General {
                 return releasedObjects;
             }
         }
-        static T prefab { get; set; }
+
+        ObjectPool<T> pool;
+        T prefab { get; set; }
+
+        public int CountInactive => throw new NotImplementedException();
 
         static string name;
 
-        public CustomPool(int defaultCapacity = 5, int maxSize = 200) : base(OnCreate, OnGet, OnRelease, null, true, defaultCapacity, maxSize) {
+        public CustomPool(int defaultCapacity = 5, int maxSize = 200) {
             name = typeof(T).Name;
+            pool = new(OnCreate, OnGet, OnRelease, OnDestroy, true, defaultCapacity, maxSize);
         }
 
-        public CustomPool(T prefab) : this() {
-            CustomPool<T>.prefab = prefab;
+        public CustomPool(T prefab, int defaultCapacity = 5, int maxSize = 200) : this(defaultCapacity, maxSize) {
+            this.prefab = prefab;
+            name = prefab.name;
         }
 
-        static T OnCreate() {
+        public T Get() => pool.Get();
+        
+        public PooledObject<T> Get(out T v) => pool.Get(out v);
+
+        public void Release(T element) => pool.Release(element);
+
+        public void Clear() => pool.Clear();
+
+        T OnCreate() {
             T handler;
             if (prefab == null) {
                 GameObject go = new GameObject(string.Format(nameDynamicHandler, name));
@@ -43,14 +57,21 @@ namespace Kubeec.General {
             return handler;
         }
 
-        static void OnGet(T handler) {
+        void OnGet(T handler) {
             handler.gameObject.SetActive(true);
         }
 
-        static void OnRelease(T handler) {
+        void OnRelease(T handler) {
             handler.transform.SetParent(ReleasedObjects);
             handler.gameObject.SetActive(false);
         }
+
+        void OnDestroy(T handler) {
+            if (handler != null) {
+                GameObject.Destroy(handler.gameObject);
+            }
+        }
+
     }
 
 }

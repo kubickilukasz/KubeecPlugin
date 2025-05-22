@@ -1,56 +1,76 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Netcode;
 
-public abstract class EffectBase : NetworkBehaviour{
+public abstract class EffectBase : EnableInitableDisposable{
 
-    [SerializeField] protected bool playOnSpawn = true;
-    [SerializeField] protected bool destroyOnEnd = true;
-    [SerializeField] protected float duration = 0f;
+    public bool playOnSpawn = true;
+    public bool destroyOnEnd = true;
+    public float duration = 0f;
 
-    public bool PlayOnSpawn => playOnSpawn;
-    public float Duration => duration;
-    public bool DestroyOnEnd => destroyOnEnd;
+    public EffectBase prefabReference { set; get; } = null;
 
-    public override void OnNetworkSpawn() {
-        base.OnNetworkSpawn();
+    Coroutine coroutine;
+
+    [ContextMenu("Play")]
+    public void Play() {
+        if (!IsInitialized()) {
+            return;
+        }
+
+        if (coroutine != null) {
+            StopCoroutine(coroutine);
+        }
+        PlayServerRpc();
+        if (duration > 0) {
+            coroutine = this.InvokeDelay(InternalOnEndPlay, duration);
+        }
+    }
+
+    public void Stop() {
+        if (!IsInitialized()) {
+            return;
+        }
+        if (coroutine != null) {
+            StopCoroutine(coroutine);
+        }
+        OnStop();
+    }
+
+    protected override void OnInit(object data) {
         OnStart();
         if (playOnSpawn) {
             Play();
         }
     }
 
-    [ContextMenu("Play")]
-    public void Play() {
-        PlayServerRpc();
-        if (duration > 0) {
-            this.InvokeDelay(InternalOnEndPlay, duration);
+    protected override void OnDispose() {
+        if (prefabReference != null) {
+            EffectPool.Release(prefabReference, this);
+            prefabReference = null;
+        } else {
+            Destroy(gameObject);
         }
     }
 
+    public virtual bool IsPlaying() => IsInitialized();
     protected abstract void OnStart();
     protected abstract void OnPlay();
     protected virtual void OnEndPlay() { }
+    protected virtual void OnStop() { }
 
-    [ServerRpc(RequireOwnership = false)]
     void PlayServerRpc() {
         PlayClientRpc();
     }
 
-    [ClientRpc(RequireOwnership = false)]
     void PlayClientRpc() {
         OnPlay();
     }
 
-    protected void InternalOnEndPlay() {
+    void InternalOnEndPlay() {
         OnEndPlay();
         if (destroyOnEnd) {
-            if (IsSpawned && IsServer) {
-                NetworkObject.Despawn(true);
-            } else {
-                Destroy(gameObject);
-            }
+            Dispose(); 
         }
     }
 
@@ -58,22 +78,35 @@ public abstract class EffectBase : NetworkBehaviour{
 
 public static class EffectBaseExt {
 
-    public static EffectBase CreateAndPlay(this EffectBase prefab, Vector3 position, Quaternion? rotation = null, Transform parent = null) {
-        EffectBase effect = Object.Instantiate(prefab);
-        if (effect.NetworkObject == null) {
-            GameObject.Destroy(effect.gameObject);
-            return null;
-        }
+    public static EffectBase Create(this EffectBase prefab, Vector3 position, Vector3 normal, Transform parent = null) {
+        Quaternion rotation = Quaternion.LookRotation(normal, Vector3.up);
+        return prefab.Create(position, rotation, parent);
+    }
+
+    public static EffectBase Create(this EffectBase prefab, Vector3 position, Quaternion? rotation = null, Transform parent = null) {
+        EffectBase effect = EffectPool.Get(prefab);
         if (parent) {
-            effect.transform.SetParent(parent, false);
+            effect.transform.SetParent(parent, true);
         }
         if (!rotation.HasValue) {
             rotation = Quaternion.identity;
         }
+        effect.prefabReference = prefab;
         effect.gameObject.transform.position = position;
         effect.gameObject.transform.rotation = rotation.Value;
-        effect.NetworkObject.Spawn();
-        if (!effect.PlayOnSpawn) {
+        effect.Init();
+        return effect;
+    }
+
+
+    public static EffectBase CreateAndPlay(this EffectBase prefab, Vector3 position, Vector3 normal, Transform parent = null) {
+        Quaternion rotation = Quaternion.LookRotation(normal, Vector3.up);
+        return prefab.CreateAndPlay(position, rotation, parent);
+    }
+
+    public static EffectBase CreateAndPlay(this EffectBase prefab, Vector3 position, Quaternion? rotation = null, Transform parent = null) {
+        EffectBase effect = prefab.Create(position, rotation, parent);
+        if (!effect.playOnSpawn) {
             effect.Play();
         }
         return effect;

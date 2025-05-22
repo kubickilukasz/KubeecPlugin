@@ -1,38 +1,42 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 
 namespace Kubeec.Hittable {
 
     public class HitProvider : EnableDisableInitableDisposable {
 
-        [SerializeField] protected EffectBase effectBase;
+        public event Action<HitInfo> onSendHit;
 
-        protected bool playEffect = true;
+        public static HitInfo CreateHit(HitReceiver hitReceiver, HitProvider hitProvider, HitType type, float damage, Vector3? position = null, Vector3? normal = null) {
+            HitInfo info = new HitInfo();
+            info.hitReceiver = hitReceiver;
+            info.hitProvider = hitProvider;
+            info.type = type;
+            info.damage = type == HitType.Heal ? -damage : damage;
+            info.position = position;
+            info.normal = normal;
+            return info;
+        }
 
-        protected float TakeHit(HitReceiver hitReceiver, HitType type, float damage, Vector3? position = null, Vector3? normal = null) {
-            if (IsInitialized()) {
-                Quaternion rotation = normal.HasValue ? Quaternion.LookRotation(normal.Value, Vector3.up) : transform.rotation;
-                if (playEffect && effectBase) {
-                    effectBase.CreateAndPlay(position ?? transform.position, rotation);
-                }
-                return hitReceiver.TakeHit(this, type, damage);
+        protected float SendHit(HitInfo info) {
+            if (IsInitialized() && info.hitReceiver != null) {
+                float damage = info.hitReceiver.TakeHit(info);
+                onSendHit?.Invoke(info);
+                return damage;
             }
             return 0;
         }
 
-        protected float TakeHit(HitReceiver hitReceiver, HitType type, float damage, Vector3? position = null, Vector3? normal = null, float delay = 0f) {
-            if (IsInitialized()) {
-                Quaternion rotation = normal.HasValue ? Quaternion.LookRotation(normal.Value, Vector3.up) : transform.rotation;
-                if (playEffect && effectBase) {
-                    effectBase.CreateAndPlay(position ?? transform.position, rotation);
-                }
-                if (delay > 0f) {
-                    return hitReceiver.TakeHit(this, type, damage, delay);
-                } else {
-                    return hitReceiver.TakeHit(this, type, damage);
-                }
-            }
-            return 0;
+        protected HitInfo CreateHit(HitReceiver hitReceiver, HitType type, float damage, Vector3? position = null, Vector3? normal = null) {
+            HitInfo info = CreateHit(hitReceiver, this, type, damage, position, normal);
+            return info;
+        }
+
+        protected HitInfo CreateHit(HitReceiver hitReceiver, HitType type, float damage, Vector3? position = null, Vector3? normal = null, float delay = 0f) {
+            HitInfo hitInfo = CreateHit(hitReceiver, type, damage, position, normal);
+            hitInfo.delay = delay > 0f? delay : null;
+            return hitInfo;
         }
 
 

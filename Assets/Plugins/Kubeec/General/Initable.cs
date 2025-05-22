@@ -100,5 +100,16 @@ public abstract class EnableDisableInitableDisposable : InitableDisposable {
         Dispose();
     }
 
+}
+
+public abstract class EnableDisableInitableDisposable<T> : InitableDisposable<T> where T : class{
+
+    void OnEnable() {
+        Init();
+    }
+
+    void OnDisable() {
+        Dispose();
+    }
 
 }

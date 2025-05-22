@@ -5,7 +5,7 @@ namespace Kubeec.Hittable {
 
     public class BlankHitReceiver : HitReceiver {
 
-        protected override void SendHitToCollector(HitProvider hitProvider, HitType hitType, float damage) {
+        protected override void SendHitToCollector(HitInfo hitInfo) {
         }
 
     }

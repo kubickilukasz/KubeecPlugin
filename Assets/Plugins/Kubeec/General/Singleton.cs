@@ -9,6 +9,11 @@ public class Singleton<T> : MonoBehaviour where T : Singleton<T>{
     public static T instance {
         get {
             if (_instance == null) {
+#if UNITY_EDITOR
+                if (!Application.isPlaying) {
+                    return null;
+                }
+#endif
                 _instance = FindAnyObjectByType<T>(FindObjectsInactive.Exclude);
                 if (_instance == null) {
                     _instance = FindAnyObjectByType<T>(FindObjectsInactive.Include);
@@ -30,7 +35,9 @@ public class Singleton<T> : MonoBehaviour where T : Singleton<T>{
             _instance = (T)this;
             _instance.OnInit();
         } else if(_instance != this) {
-            DestroyImmediate(this);
+            if (Application.isPlaying) {
+                DestroyImmediate(this);
+            }
         }
     }
 

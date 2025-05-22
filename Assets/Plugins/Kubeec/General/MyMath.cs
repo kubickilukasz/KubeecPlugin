@@ -83,18 +83,21 @@ public static partial class MyMath {
         return point;
     }
 
-    public static Quaternion AverageQuaternion(Quaternion[] quats) {
+    public static Quaternion AverageQuaternion(Quaternion[] quats, float[] weights = null) {
         if (quats.Length == 0) {
             return Quaternion.identity;
         }
+        //Assert.IsTrue(quats.Length == weights.Length);
 
         Vector4 cumulative = new Vector4(0, 0, 0, 0);
-
-        foreach (Quaternion quat in quats) {
-            AverageQuaternion_Internal(ref cumulative, quat, quats[0]);
+        float weight = 0f;
+        for(int i = 0; i < quats.Length; i++) {
+            AverageQuaternion_Internal(ref cumulative, quats[i], quats[0], weights[i]);
+            weight += weights[i];
         }
 
-        float addDet = 1f / (float)quats.Length;
+        //float addDet = 1f / (float)quats.Length;
+        float addDet = 1f / weight;
         float x = cumulative.x * addDet;
         float y = cumulative.y * addDet;
         float z = cumulative.z * addDet;
@@ -110,7 +113,7 @@ public static partial class MyMath {
     //-newRotation is the next rotation to be added to the average pool
     //-firstRotation is the first quaternion of the array to be averaged
     //-addAmount holds the total amount of quaternions which are currently added
-    static void AverageQuaternion_Internal(ref Vector4 cumulative, Quaternion newRotation, Quaternion firstRotation) {
+    static void AverageQuaternion_Internal(ref Vector4 cumulative, Quaternion newRotation, Quaternion firstRotation, float weight = 1f) {
         //Before we add the new rotation to the average (mean), we have to check whether the quaternion has to be inverted. Because
         //q and -q are the same rotation, but cannot be averaged, we have to make sure they are all the same.
         if (!AreQuaternionsClose(newRotation, firstRotation)) {
@@ -118,10 +121,10 @@ public static partial class MyMath {
         }
 
         //Average the values
-        cumulative.w += newRotation.w;
-        cumulative.x += newRotation.x;
-        cumulative.y += newRotation.y;
-        cumulative.z += newRotation.z;
+        cumulative.w += newRotation.w * weight;
+        cumulative.x += newRotation.x * weight;
+        cumulative.y += newRotation.y * weight;
+        cumulative.z += newRotation.z * weight;
     }
 
     public static Quaternion NormalizeQuaternion(Quaternion quat) {
