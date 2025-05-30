@@ -20,9 +20,9 @@ namespace Kubeec.Hittable {
 
         public void SetDeep(float value) {
             deepValue = value;
-            float lValue = Mathf.Log(value + 1f);
-            duration = audioEffect.duration = particleEffect.duration = Mathf.LerpUnclamped(minFrequency, maxFrequency, Mathf.Max(0f,1f - lValue));
-            resizableObject.transform.localScale = Vector3.LerpUnclamped(minSize, maxSize, Mathf.Max(lValue, 0f));
+            value = Mathf.Log(value * 0.1f + 1) * 8f;
+            duration = audioEffect.duration = particleEffect.duration = Mathf.Lerp(minFrequency, maxFrequency, 1f - value);
+            resizableObject.transform.localScale = minSize * value;
         }
 
         protected override void OnPlay() {

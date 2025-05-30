@@ -30,6 +30,15 @@ public static class Extensions {
         }
     }
 
+    public static Vector3 GetRandomOffset(this Vector3 center, Vector3 size) {
+        size /= 2f;
+        return new Vector3() {
+            x = center.x + UnityEngine.Random.Range(-size.x, size.x),
+            y = center.y + UnityEngine.Random.Range(-size.y, size.y),
+            z = center.z + UnityEngine.Random.Range(-size.z, size.z)
+        };
+    }
+
     public static T GetOrAdd<T>(this MonoBehaviour behaviour) where T : Component {
         return behaviour.gameObject.GetOrAdd<T>();
     }

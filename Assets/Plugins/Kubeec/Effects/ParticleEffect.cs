@@ -30,5 +30,4 @@ public class ParticleEffect : EffectBase {
         particleSystem.Stop();
     }
 
-
 }

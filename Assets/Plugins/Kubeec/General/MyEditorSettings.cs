@@ -24,7 +24,8 @@ public class MyEditorSettings{
             new(TypeSetting.ShowInteractionGizmos, true),
             new(TypeSetting.AlwaysShowGhostHandInteraction, false),
             new(TypeSetting.ShowBothGhostHandsInteractions, false),
-            new(TypeSetting.ShowCurrentHitPoints, false)
+            new(TypeSetting.ShowCurrentHitPoints, false),
+            new(TypeSetting.ShowGizmosLazyNavigation, false)
         };
         ReadValuesFromPrefs();
     }
@@ -76,6 +77,7 @@ public class MyEditorSettings{
         AlwaysShowGhostHandInteraction,
         ShowBothGhostHandsInteractions,
         ShowCurrentHitPoints,
+        ShowGizmosLazyNavigation,
     }
 
     class SetupSetting {

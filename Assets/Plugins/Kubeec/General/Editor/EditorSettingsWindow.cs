@@ -16,6 +16,7 @@ public class EditorSettingsWindow : EditorWindow {
             new(TypeSetting.AlwaysShowGhostHandInteraction, "Always ShowGhost Hand Interaction"),
             new(TypeSetting.ShowBothGhostHandsInteractions, "Show Both Ghost Hands Interactions"),
             new(TypeSetting.ShowCurrentHitPoints, "Show Current Hit Points"),
+            new(TypeSetting.ShowGizmosLazyNavigation, "Show Gizmos Lazy Navigation"),
         };
     }
 

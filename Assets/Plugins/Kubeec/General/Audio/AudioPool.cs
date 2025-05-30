@@ -10,7 +10,7 @@ namespace Kubeec.General {
 
         public static AudioObject Get(IAudioReference audioReference, Transform parent = null) {
             AudioObject output = Get(audioReference.audioObject, parent);
-            output.Init(audioReference.audioResource);
+            output.Init(audioReference);
             return output;
         }
 

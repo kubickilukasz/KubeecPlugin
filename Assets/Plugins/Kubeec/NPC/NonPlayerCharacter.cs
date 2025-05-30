@@ -10,16 +10,21 @@ namespace Kubeec.NPC {
         public NPCMove Move => move;
         public NPCBehaviour Behaviour => behaviour;
 
+        NPCInitable[] nPCInitables;
+
         protected override void OnInit(object data) {
-            move.Init(this);
-            behaviour.Init(this);
+            nPCInitables = GetComponentsInChildren<NPCInitable>(true);
+            foreach (NPCInitable nPCInitable in nPCInitables) {
+                nPCInitable.Init(this);
+            }
             NPCContainer.instance.RegisterNPC(this);
         }
 
         protected override void OnDispose() {
             NPCContainer.instance.UnregisterNPC(this);
-            behaviour.Dispose();
-            move.Dispose();
+            foreach (NPCInitable nPCInitable in nPCInitables) {
+                nPCInitable.Dispose();
+            }
         }
 
     }

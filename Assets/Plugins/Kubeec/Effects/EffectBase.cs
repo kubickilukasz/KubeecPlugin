@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+//using Unity.Netcode;
 
 public abstract class EffectBase : EnableInitableDisposable{
 
@@ -9,6 +10,15 @@ public abstract class EffectBase : EnableInitableDisposable{
     public float duration = 0f;
 
     public EffectBase prefabReference { set; get; } = null;
+
+
+    //public override void OnNetworkSpawn() {
+    //    base.OnNetworkSpawn();
+    //    OnStart();
+    //    if (playOnSpawn) {
+    //        Play();
+    //    }
+    //}
 
     Coroutine coroutine;
 
@@ -59,10 +69,12 @@ public abstract class EffectBase : EnableInitableDisposable{
     protected virtual void OnEndPlay() { }
     protected virtual void OnStop() { }
 
+    //[ServerRpc(RequireOwnership = false)]
     void PlayServerRpc() {
         PlayClientRpc();
     }
 
+    //[ClientRpc(RequireOwnership = false)]
     void PlayClientRpc() {
         OnPlay();
     }

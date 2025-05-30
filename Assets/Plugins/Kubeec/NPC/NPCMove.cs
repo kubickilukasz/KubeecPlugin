@@ -4,7 +4,7 @@ namespace Kubeec.NPC {
 
     public abstract class NPCMove : NPCInitable {
 
-        const float minDistanceToClose = 0.05f;
+        const float minDistanceToClose = 0.25f;
 
         public abstract Vector3 GetDirection();
         public abstract bool IsOnGround();
@@ -22,6 +22,12 @@ namespace Kubeec.NPC {
             }
         }
 
+        public void RotateLook(Vector3 position) {
+            if (IsInitialized()) {
+                OnRotateLook(position);
+            }
+        }
+
         public void Stop() {
             if (IsInitialized()) {
                 OnStop();
@@ -35,6 +41,8 @@ namespace Kubeec.NPC {
         protected abstract void OnMove(Vector3 direction);
 
         protected abstract void OnMoveTo(Vector3 direction);
+
+        protected abstract void OnRotateLook(Vector3 position);
 
         protected abstract void OnStop();
 
