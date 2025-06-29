@@ -12,13 +12,17 @@ namespace Kubeec.Hittable {
         public UnityEvent onHitEvent;
         public UnityEvent onDeathEvent;
 
-        public event Action<float, HitReceiver, HitProvider> onHit;
+        public event Action<HitInfo> onHit;
         public event Action<float, HitReceiver, HitProvider> onDeath;
 
         [SerializeField] protected float maxHealth = 100f;
+        [SerializeField] protected bool immortal = false;
         [SerializeField] protected List<HitDefinition> hitDefinition = new List<HitDefinition>();
 
         protected float currentHealth;
+
+        public float CurrentHealth => currentHealth;
+        public float MaxHealth => maxHealth;
 
 #if UNITY_EDITOR
         void OnDrawGizmos() {
@@ -37,9 +41,11 @@ namespace Kubeec.Hittable {
                 hitInfo.damage *= definition.multiplier;
             }
             MyDebug.Log(MyDebug.TypeLog.Hit, hitInfo.hitReceiver, hitInfo.hitProvider, hitInfo.type, hitInfo.damage);
-            currentHealth -= hitInfo.damage;
+            if (!immortal || currentHealth > hitInfo.damage) {
+                currentHealth -= hitInfo.damage;
+            }
             OnHit(hitInfo);
-            onHit?.Invoke(hitInfo.damage, hitInfo.hitReceiver, hitInfo.hitProvider);
+            onHit?.Invoke(hitInfo);
             onHitEvent?.Invoke();
             HandleCurrentHealth(hitInfo.damage, hitInfo.hitReceiver, hitInfo.hitProvider);
             return true;

@@ -12,7 +12,7 @@ public class ComponentReference : MonoBehaviour{
 
 public static class ComponentReferenceExt {
 
-    public static bool TryGetComponentFromSource<T>(this GameObject gameObject, out T component) where T : Component {
+    public static bool TryGetComponentFromSource<T>(this GameObject gameObject, out T component){
         if (gameObject.TryGetComponent(out component)) {
             return true;
         } else if (gameObject.TryGetComponent(out ComponentReference reference)) {
@@ -21,8 +21,9 @@ public static class ComponentReferenceExt {
         return false;
     }
 
-    public static bool TryGetComponentFromSource<T>(this Component source, out T component) where T : Component {
+    public static bool TryGetComponentFromSource<T>(this Component source, out T component) {
         return source.gameObject.TryGetComponentFromSource(out component);
     }
+
 
 }

@@ -21,6 +21,9 @@ namespace Kubeec.Hittable {
                         if (colliderHit.minForce <= force) {
                             colliderHit.effectBaseReachMinForce?.CreateAndPlay(contact.point, contact.normal);
                             float damage = colliderHit.useStaticDamage ? colliderHit.staticDamage : force * colliderHit.damagePerForce;
+                            if (colliderHit.maxDamage > 0f) {
+                                damage = Mathf.Min(damage, colliderHit.maxDamage);
+                            }
                             HitInfo hitInfo = CreateHit(hitReceiver, colliderHit.hitType, damage, contact.point, contact.normal);
                             SendHit(hitInfo);
                         }

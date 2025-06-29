@@ -58,7 +58,7 @@ namespace Kubeec.NPC.LazyNavigation {
             return target;
         }
 
-        public List<Vector3> FindPath(Zone start, Zone target) {
+        public List<Vector3> FindPath(Zone start, Zone target, Vector3? startPosition = null) {
             if (target.isBlocked) {
                 return null;
             }
@@ -71,7 +71,7 @@ namespace Kubeec.NPC.LazyNavigation {
                 Node current = FindLowestCost(toCheck);
                 toCheck.Remove(current);
                 if (current.zone == target) {
-                    return GetPathPositions(current);
+                    return GetPathPositions(current, startPosition);
                 }
                 if (current.zone.isBlocked) {
                     continue;
@@ -126,17 +126,27 @@ namespace Kubeec.NPC.LazyNavigation {
             return path;
         }
 
-        List<Vector3> GetPathPositions(Node target) {
+        List<Vector3> GetPathPositions(Node target, Vector3? startPosition = null) {
             List<Vector3> path = new List<Vector3>();
+            List<Zone> pathZone = GetPath(target);
             //path.Add(target.zone.GetCenter());
-            Node cameFrom = target.cameFrom;
-            while (cameFrom != null) {
-                path.Add(target.zone.ClosestPoint(cameFrom.zone));
-                path.Add(cameFrom.zone.ClosestPoint(target.zone));
-                target = cameFrom;
-                cameFrom = target.cameFrom;
+            //Node cameFrom = target.cameFrom;
+            //while (cameFrom != null) {
+            //    pathZone.Add(target.zone);
+            //    pathZone.Add(cameFrom.zone);
+            //    path.Add(target.zone.ClosestPoint(cameFrom.zone));
+            //    path.Add(cameFrom.zone.ClosestPoint(target.zone));
+            //    target = cameFrom;
+            //    cameFrom = target.cameFrom;
+            //}
+            //path.Reverse();
+            Vector3 currentPosition = startPosition ?? pathZone[0].GetCenter();
+            for (int i = 0; i < pathZone.Count; i++) {
+                //path.Add(pathZone[i].FindClosestPoint(currentPosition));
+                Vector3 closest = pathZone[i].FindClosestPoint(currentPosition);
+                path.Add(closest);
+                currentPosition = closest;
             }
-            path.Reverse();
             return path;
         }
 

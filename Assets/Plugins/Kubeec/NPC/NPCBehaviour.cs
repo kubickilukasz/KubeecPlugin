@@ -9,20 +9,18 @@ namespace Kubeec.NPC {
 
     public abstract class NPCBehaviour : NPCInitable {
 
-        [SerializeField] ZoneController zoneController;
-
         NPCBehaviourState currentState;
         public NPCBehaviourState CurrentState => currentState;
-        public ZoneController ZoneController => zoneController;
+        public ZoneController ZoneController { get; set; }
 
         void Update() {
-            if (IsInitialized()) {
+            if (IsInitialized() && currentState != null) {
                 currentState.Update();
             }
         }
 
         void FixedUpdate() {
-            if (IsInitialized()) {
+            if (IsInitialized() && currentState != null) {
                 currentState.FixedUpdate();
             }
         }
@@ -30,6 +28,10 @@ namespace Kubeec.NPC {
         public abstract NPCBehaviourState GetDefault();
 
         public T ChangeState<T>(T state) where T : NPCBehaviourState {
+            if (!IsInitialized()) {
+                return null;
+            }
+
             if (state != null) {
                 currentState = state;
             }
@@ -43,7 +45,16 @@ namespace Kubeec.NPC {
 
         protected override void OnInit(NonPlayerCharacter data) {
             base.OnInit(data);
-            currentState = GetDefault();
+            this.InvokeNextFrame(() => {
+                if (IsInitialized()) {
+                    currentState = GetDefault();
+                }
+            });
+        }
+
+        protected override void OnDispose() {
+            base.OnDispose();
+            currentState = null;
         }
 
     }
@@ -74,9 +85,6 @@ namespace Kubeec.NPC {
                 if (path == null) {
                     return null;
                 }
-            }
-            for (int i = 0; i < path.Count - 1; i++) {
-                Debug.DrawLine(path[i], path[i + 1], Color.green);
             }
             while (path.Count > 0) {
                 Vector3 firstOnPath = path.First();

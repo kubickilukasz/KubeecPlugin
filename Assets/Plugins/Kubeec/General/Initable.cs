@@ -60,6 +60,7 @@ public abstract class InitableDisposable<T> : MonoBehaviour, IInitable<T>, IDisp
 
 }
 
+
 public abstract class Initable : Initable<object> {
 }
 
@@ -99,6 +100,7 @@ public abstract class EnableDisableInitableDisposable : InitableDisposable {
     void OnDisable() {
         Dispose();
     }
+
 
 }
 

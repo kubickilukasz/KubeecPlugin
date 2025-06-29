@@ -9,13 +9,13 @@ public class ActionBoolAudio : AudioEndpoint{
 
     protected override void OnInit(object data) {
         action = GetComponent<IActionBool>();
-        action.onAction += OnAction;
+        action.onActionBool += OnAction;
     }
 
     protected override void OnDispose() {
         base.OnDispose();
         if (action != null) {
-            action.onAction -= OnAction;
+            action.onActionBool -= OnAction;
         }
     }
 

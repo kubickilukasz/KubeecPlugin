@@ -1,16 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
+using Kubeec.General;
 using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
 using NaughtyAttributes;
+using System;
 
 namespace UI {
 
     [RequireComponent(typeof(CanvasGroup))]
-    public abstract class Panel : RectMonoBehaviour {
+    public abstract class Panel : EnableDisableRectInitableDisposable {
 
-        [SerializeField] float fadeInOutDuration = 0.2f;
+        public event Action onShow;
+        public event Action onHide;
+
+        [SerializeField] AnimationController animationController;
 
         PanelController _controller;
         PanelController controller {
@@ -24,22 +29,12 @@ namespace UI {
 
         Panel currentActivePanel => controller != null ? controller.currentActivePanel : null;
 
-        CanvasGroup _canvasGroup;
-        CanvasGroup canvasGroup {
-            get {
-                if (_canvasGroup == null) {
-                    _canvasGroup = GetComponent<CanvasGroup>();
-                }
-                return _canvasGroup;
-            }
-        }
-
         bool? isShown = null;
         public bool IsShown => !isShown.HasValue || isShown.Value;
         public bool IsHidden => !isShown.HasValue || !isShown.Value;
 
-        protected virtual void OnDisable() {
-            ResetAnimation();
+        protected override void OnInit(object data) {
+            animationController.Init();
         }
 
         [Button]
@@ -49,10 +44,12 @@ namespace UI {
                     currentActivePanel.Hide();
                 }
                 controller.currentActivePanel = this;
-                ResetAnimation();
-                canvasGroup.DOFade(1f, fadeInOutDuration).OnComplete(() => canvasGroup.interactable = true);
                 isShown = true;
-                OnShow();
+                animationController?.Stop();
+                animationController?.Play(null, () => {
+                    OnShow();
+                    onShow?.Invoke();
+                });
             }
         }
 
@@ -62,11 +59,12 @@ namespace UI {
                 if (currentActivePanel == this) {
                     controller.currentActivePanel = null;
                 }
-                ResetAnimation();
-                canvasGroup.DOFade(0f, fadeInOutDuration);
-                canvasGroup.interactable = false;
                 isShown = false;
-                OnHide();
+                animationController?.Stop();
+                animationController?.PlayBackwards(null, () => {
+                    OnHide();
+                    onHide?.Invoke();
+                });
             }
         }
 
@@ -77,10 +75,7 @@ namespace UI {
         protected virtual void OnShow() { } 
         protected virtual void OnHide() { }
 
-        void ResetAnimation() {
-            canvasGroup.DOKill(gameObject);
-        }
-
+        
     }
 
 }

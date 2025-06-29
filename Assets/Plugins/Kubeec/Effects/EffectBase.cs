@@ -1,3 +1,4 @@
+using Kubeec.General;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,6 +9,7 @@ public abstract class EffectBase : EnableInitableDisposable{
     public bool playOnSpawn = true;
     public bool destroyOnEnd = true;
     public float duration = 0f;
+    public LazyFollower lazyFollower;
 
     public EffectBase prefabReference { set; get; } = null;
 

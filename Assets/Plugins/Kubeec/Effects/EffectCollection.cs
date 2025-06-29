@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class EffectCollection : EffectBase, IStateVariable {
+public class EffectCollection : EffectBase, IStateFloat {
 
     [SerializeField] bool loop = false;
     [SerializeField] List<EffectElement> effectElements = new();
@@ -18,6 +18,7 @@ public class EffectCollection : EffectBase, IStateVariable {
             if (element == null || element.effect == null) {
                 continue;
             }
+            element.effect.destroyOnEnd = element.effect.playOnSpawn = false;
             float current = element.delay + element.effect.duration;
             if (current > maxDuration) {
                 maxDuration = current;
@@ -61,7 +62,7 @@ public class EffectCollection : EffectBase, IStateVariable {
     public void SetState(float value) {
         currentState = value;
         foreach (EffectElement element in effectElements) {
-            if (element.effect is IStateVariable variable) {
+            if (element.effect is IStateFloat variable) {
                 variable.SetState(currentState);
             }
         }

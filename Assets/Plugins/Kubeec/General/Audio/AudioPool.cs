@@ -10,6 +10,7 @@ namespace Kubeec.General {
 
         public static AudioObject Get(IAudioReference audioReference, Transform parent = null) {
             AudioObject output = Get(audioReference.audioObject, parent);
+            output.transform.localPosition = Vector3.zero;
             output.Init(audioReference);
             return output;
         }

@@ -8,6 +8,22 @@ namespace Kubeec.Hittable {
 
         public event Action<HitInfo> onSendHit;
 
+        public float damageMultiplier { get; set; } = 1f;
+
+        public GameObject Owner {
+            get {
+                if (owner == null) {
+                    owner = gameObject;
+                }
+                return owner;
+            }
+            set {
+                owner = value;
+            }
+        }
+
+        GameObject owner;
+
         public static HitInfo CreateHit(HitReceiver hitReceiver, HitProvider hitProvider, HitType type, float damage, Vector3? position = null, Vector3? normal = null) {
             HitInfo info = new HitInfo();
             info.hitReceiver = hitReceiver;
@@ -21,6 +37,7 @@ namespace Kubeec.Hittable {
 
         protected float SendHit(HitInfo info) {
             if (IsInitialized() && info.hitReceiver != null) {
+                info.damage *= damageMultiplier;
                 float damage = info.hitReceiver.TakeHit(info);
                 onSendHit?.Invoke(info);
                 return damage;

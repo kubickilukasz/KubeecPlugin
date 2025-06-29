@@ -3,7 +3,11 @@ using System;
 
 namespace UI {
 
-    public abstract class AnimationBase : RectMonoBehaviour, IAnimation {
+    public abstract class AnimationBase : EnableDisableRectInitableDisposable, IAnimation{
+
+        public abstract float GetPlayDuration();
+
+        public abstract float GetPlayBackwardsDuration();
 
         public abstract void Pause();
 
@@ -13,13 +17,9 @@ namespace UI {
 
         public abstract void Stop();
 
-        public virtual void ResetToPlay() {
-            Play(0f);
-        }
+        public abstract void ResetToPlay();
 
-        public virtual void PlayBackwards() {
-            PlayBackwards(0f);
-        }
+        public abstract void ResetToPlayBackwards();
 
     }
 

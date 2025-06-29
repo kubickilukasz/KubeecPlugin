@@ -79,8 +79,10 @@ public class AudioProcessor : EnableDisableInitableDisposable, IAudio {
     protected override void OnDispose() {
         if (audioObject && this != null) {
             audioObject.Stop();
-            audioReference.Release(audioObject);
-            audioObject = null;
+            this.SafeInvokeNextFrame(() => {
+                audioReference.Release(audioObject);
+                audioObject = null;
+            });
         }
     }
 }

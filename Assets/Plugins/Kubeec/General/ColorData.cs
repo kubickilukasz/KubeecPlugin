@@ -42,13 +42,21 @@ public class ColorDataReference{
     [SerializeField] ColorData colorData;
     [SerializeField] ColorData.Variant variant;
 
-    public Color Get() => colorData.Get(variant);
+    public Color Get() => colorData ? colorData.Get(variant) : Color.black;
+
+    public static explicit operator Color(ColorDataReference color) {
+        return color.Get();
+    }
 }
 
 #if UNITY_EDITOR
 
 [UnityEditor.CustomPropertyDrawer(typeof(ColorDataReference))]
-public class IngredientDrawerUIE : UnityEditor.PropertyDrawer {
+public class ColorDataReferenceDrawer : UnityEditor.PropertyDrawer {
+
+    public override void OnGUI(Rect position, UnityEditor.SerializedProperty property, GUIContent label){
+        UnityEditor.EditorGUILayout.PropertyField(property);
+    }
 
     public override VisualElement CreatePropertyGUI(UnityEditor.SerializedProperty property) {
         // Create property container element.

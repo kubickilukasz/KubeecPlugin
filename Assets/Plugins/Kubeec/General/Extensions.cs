@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System;
 using Kubeec.General;
+using System.Security.Cryptography;
 
 public static class Extensions {
 
     public const string pathToResourcesData = "Data";
+    public const string copyName = "_Copy";
 
-    static CustomPool<EmptyBehaviour> _genericPool = null;
-    public static CustomPool<EmptyBehaviour> genericPool {
+    static EmptyBehaviour _emptyBehaviour = null;
+    public static EmptyBehaviour emptyBehaviour {
         get {
-            if (_genericPool == null) {
-                _genericPool = new CustomPool<EmptyBehaviour>();
+            if (_emptyBehaviour == null) {
+                _emptyBehaviour = new GameObject(typeof(EmptyBehaviour).Name).AddComponent<EmptyBehaviour>();
+                GameObject.DontDestroyOnLoad(_emptyBehaviour.gameObject);
             }
-            return _genericPool;
+            return _emptyBehaviour;
         }
     }
 
@@ -28,6 +30,30 @@ public static class Extensions {
         void OnApplicationQuit() {
             isQuitting = true;
         }
+    }
+
+    public static Color SetAlpha(this Color color, float alpha) {
+        return new Color(color.r, color.g, color.b, alpha);
+    }
+
+    public static void CopyValues(this Transform target, Transform origin) {
+        target.parent = origin.parent;
+        target.localPosition = origin.localPosition;
+        target.localRotation = origin.localRotation;
+        target.localScale = origin.localScale;
+    }
+
+    public static Transform Copy(this Transform transform) {
+        Transform copy = new GameObject($"{transform.name}{copyName}").transform;
+        copy.CopyValues(transform);
+        return copy;
+    }
+
+    public static string GetString(this float value, int precision) {
+        float prec = Mathf.Max(precision * 10, 1);
+        int val = Mathf.RoundToInt(value * prec);
+        value = val / prec;
+        return val.ToString();
     }
 
     public static Vector3 GetRandomOffset(this Vector3 center, Vector3 size) {
@@ -83,6 +109,12 @@ public static class Extensions {
         rigidbody.TryRotateTo(rotation, deltaTime);
     }
 
+    public static void TryMoveToSmooth(this Rigidbody rigidbody, Vector3 position, Quaternion rotation, float smooth) {
+        float deltaTime = Mathf.Lerp(1f / Time.fixedDeltaTime, Time.fixedDeltaTime, smooth);
+        rigidbody.AddForce((((position - rigidbody.position) * deltaTime) - rigidbody.linearVelocity), ForceMode.VelocityChange);
+        rigidbody.TryRotateTo(rotation, deltaTime);
+    }
+
     public static void TryMoveToSmooth(this Rigidbody rigidbody, Vector3 position, Quaternion rotation, Vector3 center, float smooth) {
         rigidbody.TryMoveToSmooth(position, rotation, Time.fixedDeltaTime, center, smooth);
     }
@@ -102,6 +134,11 @@ public static class Extensions {
         rigidbody.inertiaTensorRotation = Quaternion.identity;
         rigidbody.angularVelocity = rotationAxis;
         rigidbody.maxAngularVelocity = 14;
+    }
+
+    public static void TryRotateTo(this Rigidbody rigidbody, Quaternion rotation, float deltaTime, float smooth) {
+        deltaTime = Mathf.Lerp(1f / Time.fixedDeltaTime, Time.fixedDeltaTime, smooth);
+        rigidbody.TryRotateTo(rotation, deltaTime);
     }
 
     public static Quaternion ShortestRotation(Quaternion a, Quaternion b) {
@@ -138,17 +175,35 @@ public static class Extensions {
         }
     }
 
-    static EmptyBehaviour emptyBehaviour;
     public static void SafeInvokeNextFrame(this MonoBehaviour monoBehaviour, Action invokedCall) {
-        emptyBehaviour ??= genericPool.Get();
         if (emptyBehaviour.isQuitting || invokedCall == null) {
             return;
         }
-        EmptyBehaviour eb = genericPool.Get();
-        eb.InvokeNextFrame(() => {
+        emptyBehaviour.InvokeNextFrame(() => {
             invokedCall.Invoke();
-            genericPool.Release(eb);
         });
+    }
+
+    /// <summary>
+    /// Wait 2 frames to delete object
+    /// </summary>
+    /// <param name="monoBehaviour"></param>
+    public static void SafeSelftDestroy(this GameObject gameObject) {
+        if (gameObject == null) {
+            return;
+        }
+        gameObject.SetActive(false);
+        if (emptyBehaviour.isQuitting) {
+            return;
+        }
+        emptyBehaviour.StartCoroutine(WaitForDestroy(gameObject));
+        IEnumerator WaitForDestroy(GameObject gameObject) {
+            yield return null;
+            yield return null;
+            if (gameObject != null) {
+                GameObject.Destroy(gameObject);
+            }
+        }
     }
 
     public static bool CheckHashedPassword(this string hashedPassword, string password) {
@@ -172,19 +227,6 @@ public static class Extensions {
         Array.Copy(salt, 0, hashBytes, 0, 16);
         Array.Copy(hash, 0, hashBytes, 16, 20);
         return Convert.ToBase64String(hashBytes);
-    }
-
-    public static Vector3 GetAngle180(this Vector3 vector3) {
-        if (vector3.x >= 180) {
-            vector3.x -= 360;
-        }
-        if (vector3.y >= 180) {
-            vector3.y -= 360;
-        }
-        if (vector3.z >= 180) {
-            vector3.z -= 360;
-        }
-        return vector3;
     }
 
     public static Vector3 Multiply(this Vector3 vector3, Vector3 other) {

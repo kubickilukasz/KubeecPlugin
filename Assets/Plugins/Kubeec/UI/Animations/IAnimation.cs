@@ -13,6 +13,10 @@ namespace UI {
 
         public void Pause();
 
+        public void ResetToPlay();
+
+        public void ResetToPlayBackwards();
+
     }
 
 }

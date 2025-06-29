@@ -9,6 +9,6 @@ public interface IAction{
 
 public interface IActionBool{
 
-    public event Action<bool> onAction;
+    public event Action<bool> onActionBool;
 
 }

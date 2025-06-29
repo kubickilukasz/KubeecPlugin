@@ -7,7 +7,8 @@ namespace UI {
     [ExecuteAlways]
     public class ChildGraphicsColorSetter : ColorSetter {
 
-        [SerializeField] [HideInInspector] Graphic[] graphics;
+        [SerializeField] [HideInInspector] Graphic[] graphics = new Graphic[0];
+        [SerializeField] protected bool overrdieAlpha = true;
 
         [Button]
         void Reset() {
@@ -19,8 +20,15 @@ namespace UI {
 
         public override void UpdateColor() {
             if (graphics != null) {
-                foreach (Graphic item in graphics) {
-                    item.color = colorData.Get(variant);
+                if (overrdieAlpha) {
+                    foreach (Graphic item in graphics) {
+                        item.color = colorData.Get(variant);
+                    }
+                } else {
+                    foreach (Graphic item in graphics) {
+                        Color color = colorData.Get(variant);
+                        item.color = ColorData.GetWithAlpha(item.color.a, color);
+                    }
                 }
             }
         }

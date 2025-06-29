@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class AudioEffectState : AudioEffectBase, IStateVariable {
+public class AudioEffectState : AudioEffectBase, IStateFloat {
 
     public event Action<float> onChangeState;
 

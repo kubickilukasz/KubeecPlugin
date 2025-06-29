@@ -10,9 +10,11 @@ public class AudioReference : ScriptableObject, IAudioReference {
 
     [SerializeField] AudioObject _audioObject;
     [SerializeField] AudioResource _audioResource;
+    [SerializeField] bool playOnce = false;
 
     public AudioObject audioObject => _audioObject;
     public AudioResource audioResource => _audioResource;
+    public bool PlayOnce => playOnce;
 
     HashSet<AudioObject> registeredObjects = new HashSet<AudioObject>();
 
@@ -41,6 +43,7 @@ public interface IAudioReference {
 
     public AudioObject audioObject { get; }
     public AudioResource audioResource { get; }
+    public bool PlayOnce { get; }
 
     public void Register(AudioObject obj);
     public void Unregister(AudioObject obj);

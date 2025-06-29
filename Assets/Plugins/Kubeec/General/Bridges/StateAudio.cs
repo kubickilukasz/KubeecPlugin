@@ -1,17 +1,16 @@
 using UnityEngine;
 
-[RequireComponent(typeof(IStateVariable))]
+[RequireComponent(typeof(IStateFloat))]
 public class StateAudio : AudioEndpoint{
 
     [SerializeField] [Range(0, 1f)] float threshold = 0.4f;
-    [SerializeField] [Range(0, 1f)] float defaultValue = 0;
 
-    IStateVariable stateVariable;
+    IStateFloat stateVariable;
     float currentValue;
 
     protected override void OnInit(object data) {
-        stateVariable = GetComponent<IStateVariable>();
-        currentValue = defaultValue;
+        stateVariable = GetComponent<IStateFloat>();
+        currentValue = stateVariable.GetState();
         stateVariable.onChangeState += OnChangeState;
     }
 
